@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
 import {
   COLOR_ORDER,
@@ -19,12 +19,39 @@ export default function SetupPage() {
   const swapColor = useGameStore((s) => s.swapColor);
   const setInitialMoney = useGameStore((s) => s.setInitialMoney);
   const setAllInitialMoney = useGameStore((s) => s.setAllInitialMoney);
+  const setAllUnlimited = useGameStore((s) => s.setAllUnlimited);
   const startGame = useGameStore((s) => s.startGame);
 
   const count = players.length;
   // 初始资金预设：所有玩家金钱一致时高亮对应档位
   const allSameMoney = players.every((p) => p.money === players[0]?.money);
   const presetValue = allSameMoney ? players[0]?.money : undefined;
+  // 全员无限金钱模式
+  const allUnlimited = players.every((p) => p.unlimitedMoney);
+
+  // 不蒜子访客统计：每次进入设置页重新加载脚本并填充
+  const bszLoaded = useRef(false);
+  useEffect(() => {
+    const load = () => {
+      const old = document.getElementById("busuanzi-script");
+      if (old) old.remove();
+      const s = document.createElement("script");
+      s.id = "busuanzi-script";
+      s.src =
+        "//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+      s.async = true;
+      document.body.appendChild(s);
+    };
+    if (bszLoaded.current) {
+      // 已加载过，重置容器隐藏状态后再加载以重新填充
+      const c = document.getElementById("busuanzi_container_site_uv");
+      if (c) c.style.display = "none";
+      load();
+    } else {
+      bszLoaded.current = true;
+      load();
+    }
+  }, []);
 
   return (
     <div className="flex h-full flex-col bg-base text-ink">
@@ -75,9 +102,9 @@ export default function SetupPage() {
         {/* 初始资金预设 */}
         <section>
           <SectionLabel icon={<Coins size={14} />}>初始资金</SectionLabel>
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="grid grid-cols-3 gap-3 mt-3">
             {[17, 30].map((m) => {
-              const active = presetValue === m;
+              const active = !allUnlimited && presetValue === m;
               return (
                 <button
                   key={m}
@@ -95,9 +122,23 @@ export default function SetupPage() {
                 </button>
               );
             })}
+            {/* 无限金钱：仅按回合内花费排顺位，不限制金钱 */}
+            <button
+              type="button"
+              onClick={() => setAllUnlimited()}
+              className={cn(
+                "h-14 rounded-xl font-display font-semibold transition-all border flex items-center justify-center",
+                allUnlimited
+                  ? "bg-brass text-base border-brass shadow-card"
+                  : "bg-elevated text-ink-dim border-line hover:border-brass-dim",
+              )}
+              title="无限金钱：仅按回合内花费排顺位"
+            >
+              <span className="text-2xl tnum">∞</span>
+            </button>
           </div>
           <p className="mt-2 text-xs text-ink-mute">
-            点击预设一键应用到所有玩家，也可在下方逐个微调
+            点击预设一键应用到所有玩家，∞ 表示无限金钱（只算花费排顺位）
           </p>
         </section>
 
@@ -198,6 +239,13 @@ export default function SetupPage() {
           </div>
         </section>
       </main>
+
+      {/* 访客统计 —— 不蒜子，小字不影响使用 */}
+      <div className="text-center text-[10px] text-ink-mute py-1">
+        <span id="busuanzi_container_site_uv" style={{ display: "none" }}>
+          已有 <span id="busuanzi_value_site_uv" /> 位访客
+        </span>
+      </div>
 
       {/* 底部操作 */}
       <footer className="border-t border-line bg-surface/80 backdrop-blur px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

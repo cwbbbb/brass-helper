@@ -8,6 +8,8 @@ export interface Player {
   money: number;
   spentThisRound: number;
   incomeLevel: number;
+  // 无限金钱模式：仅按回合内花费排顺位，金钱不限制也不扣减
+  unlimitedMoney: boolean;
 }
 
 export interface GameState {

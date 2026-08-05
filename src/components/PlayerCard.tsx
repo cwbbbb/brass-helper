@@ -78,41 +78,46 @@ export default function PlayerCard({
               )}
             </div>
             <div className="flex items-center gap-2">
-              {/* 贷款按钮：单击贷款（收入−3 金钱+30），长按撤回（收入+3 金钱−30） */}
+              {/* 贷款按钮：单击贷款（收入−3 金钱+30），长按撤回（收入+3 金钱−30）；无限金钱模式隐藏 */}
+              {!player.unlimitedMoney && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (loanLongPress.didRepeatRef.current) {
+                      loanLongPress.didRepeatRef.current = false;
+                      return;
+                    }
+                    takeLoan(player.id);
+                  }}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    loanLongPress.start();
+                  }}
+                  onPointerUp={loanLongPress.stop}
+                  onPointerLeave={loanLongPress.stop}
+                  onPointerCancel={loanLongPress.stop}
+                  style={{ touchAction: "none" }}
+                  className="h-8 w-8 rounded-md bg-player-red/15 text-player-red-light border border-player-red/30 font-display font-bold text-sm active:bg-player-red/25 active:scale-95 transition-all"
+                  aria-label="贷款，单击贷款，长按撤回"
+                  title="单击贷款 +$30，长按撤回 −$30"
+                >
+                  贷
+                </button>
+              )}
+              {/* 金钱（点击打开全屏加减弹窗）；无限金钱模式显示 ∞ 不可点击 */}
               <button
                 type="button"
                 onClick={() => {
-                  if (loanLongPress.didRepeatRef.current) {
-                    loanLongPress.didRepeatRef.current = false;
-                    return;
-                  }
-                  takeLoan(player.id);
+                  if (!player.unlimitedMoney) setShowMoneyDialog(true);
                 }}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  loanLongPress.start();
-                }}
-                onPointerUp={loanLongPress.stop}
-                onPointerLeave={loanLongPress.stop}
-                onPointerCancel={loanLongPress.stop}
-                style={{ touchAction: "none" }}
-                className="h-8 w-8 rounded-md bg-player-red/15 text-player-red-light border border-player-red/30 font-display font-bold text-sm active:bg-player-red/25 active:scale-95 transition-all"
-                aria-label="贷款，单击贷款，长按撤回"
-                title="单击贷款 +$30，长按撤回 −$30"
-              >
-                贷
-              </button>
-              {/* 金钱（点击打开全屏加减弹窗） */}
-              <button
-                type="button"
-                onClick={() => setShowMoneyDialog(true)}
-                className="flex items-center gap-0.5 rounded-md px-1.5 py-1 active:bg-elevated transition-colors"
-                aria-label="点击调整金钱"
-                title="点击调整金钱（售卖铁煤等直接获得金钱）"
+                disabled={player.unlimitedMoney}
+                className="flex items-center gap-0.5 rounded-md px-1.5 py-1 active:bg-elevated transition-colors disabled:active:bg-transparent"
+                aria-label={player.unlimitedMoney ? "无限金钱模式" : "点击调整金钱"}
+                title={player.unlimitedMoney ? "无限金钱模式" : "点击调整金钱（售卖铁煤等直接获得金钱）"}
               >
                 <span className="text-brass-dim font-display text-xs">$</span>
                 <span className="font-display text-base font-bold text-ink-dim tnum leading-none">
-                  {player.money}
+                  {player.unlimitedMoney ? "∞" : player.money}
                 </span>
               </button>
             </div>
@@ -160,7 +165,7 @@ export default function PlayerCard({
               <StepperButton
                 variant="add"
                 onClick={() => adjustSpent(player.id, 1)}
-                disabled={player.money <= 0}
+                disabled={!player.unlimitedMoney && player.money <= 0}
                 ariaLabel="增加1花费"
                 className="h-9 text-sm"
               >
@@ -169,7 +174,7 @@ export default function PlayerCard({
               <StepperButton
                 variant="add"
                 onClick={() => adjustSpent(player.id, 5)}
-                disabled={player.money <= 0}
+                disabled={!player.unlimitedMoney && player.money <= 0}
                 ariaLabel="增加5花费"
                 className="h-9 text-sm"
               >

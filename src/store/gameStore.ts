@@ -18,6 +18,7 @@ interface GameActions {
   swapColor: (playerId: string) => void;
   setInitialMoney: (playerId: string, money: number) => void;
   setAllInitialMoney: (money: number) => void;
+  setAllUnlimited: () => void;
   startGame: () => void;
 
   // 游戏主页操作
@@ -50,6 +51,7 @@ function createPlayers(count: number): Player[] {
     money: INITIAL_MONEY[count] ?? 0,
     spentThisRound: 0,
     incomeLevel: 0,
+    unlimitedMoney: false,
   }));
 }
 
@@ -128,13 +130,28 @@ export const useGameStore = create<Store>((set, get) => ({
   setInitialMoney: (playerId, money) =>
     set((state) => ({
       players: state.players.map((p) =>
-        p.id === playerId ? { ...p, money: Math.max(0, money) } : p,
+        p.id === playerId
+          ? { ...p, money: Math.max(0, money), unlimitedMoney: false }
+          : p,
       ),
     })),
 
   setAllInitialMoney: (money) =>
     set((state) => ({
-      players: state.players.map((p) => ({ ...p, money: Math.max(0, money) })),
+      players: state.players.map((p) => ({
+        ...p,
+        money: Math.max(0, money),
+        unlimitedMoney: false,
+      })),
+    })),
+
+  setAllUnlimited: () =>
+    set((state) => ({
+      players: state.players.map((p) => ({
+        ...p,
+        unlimitedMoney: true,
+        money: 0,
+      })),
     })),
 
   startGame: () =>
@@ -157,6 +174,13 @@ export const useGameStore = create<Store>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
+        // 无限金钱模式：只记花费排顺位，不扣金钱
+        if (p.unlimitedMoney) {
+          let eff = delta;
+          if (eff < 0) eff = Math.max(eff, -p.spentThisRound);
+          if (eff === 0) return p;
+          return { ...p, spentThisRound: p.spentThisRound + eff };
+        }
         // 钳制实际生效的 delta：
         // - 增加花费时不能超过现有金钱（扣减不能为负）
         // - 撤销花费时不能超过已记花费（回补不能多补）
@@ -186,6 +210,8 @@ export const useGameStore = create<Store>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
+        // 无限金钱模式：金钱无需调整
+        if (p.unlimitedMoney) return p;
         // 直接调整金钱（售卖铁煤等直接获得金钱）；不能为负
         return { ...p, money: Math.max(0, p.money + delta) };
       }),
@@ -195,6 +221,8 @@ export const useGameStore = create<Store>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
+        // 无限金钱模式：不需要贷款
+        if (p.unlimitedMoney) return p;
         // 贷款：收入轨 −3，立即 +$30（收入轨可降到负数）
         return {
           ...p,
@@ -208,6 +236,8 @@ export const useGameStore = create<Store>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
+        // 无限金钱模式：不需要撤回贷款
+        if (p.unlimitedMoney) return p;
         // 撤回贷款：金钱 −$30（不能为负），收入轨 +3（不超过上限）
         if (p.money < LOAN_MONEY_GAIN) return p;
         return {
@@ -238,10 +268,10 @@ export const useGameStore = create<Store>((set, get) => ({
       });
       const sortedPlayers = indexed.map(({ p }) => p);
 
-      // 3. 发放收入到金钱，清零本回合花费
+      // 3. 发放收入到金钱，清零本回合花费（无限金钱模式不发放收入）
       const newPlayers = sortedPlayers.map((p) => ({
         ...p,
-        money: p.money + p.incomeLevel,
+        money: p.unlimitedMoney ? p.money : p.money + p.incomeLevel,
         spentThisRound: 0,
       }));
 
