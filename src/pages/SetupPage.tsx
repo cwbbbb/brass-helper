@@ -37,15 +37,11 @@ export default function SetupPage() {
       if (old) old.remove();
       const s = document.createElement("script");
       s.id = "busuanzi-script";
-      s.src =
-        "//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+      s.src = "//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js";
       s.async = true;
       document.body.appendChild(s);
     };
     if (bszLoaded.current) {
-      // 已加载过，重置容器隐藏状态后再加载以重新填充
-      const c = document.getElementById("busuanzi_container_site_uv");
-      if (c) c.style.display = "none";
       load();
     } else {
       bszLoaded.current = true;
@@ -242,9 +238,7 @@ export default function SetupPage() {
 
       {/* 访客统计 —— 不蒜子，小字不影响使用 */}
       <div className="text-center text-[10px] text-ink-mute py-1">
-        <span id="busuanzi_container_site_uv" style={{ display: "none" }}>
-          已有 <span id="busuanzi_value_site_uv" /> 位访客
-        </span>
+        已有 <span id="busuanzi_site_uv">…</span> 位访客
       </div>
 
       {/* 底部操作 */}
