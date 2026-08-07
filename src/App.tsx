@@ -13,8 +13,8 @@ export default function App() {
 
   // 居中「手机框」：桌面端限制宽度，移动端全屏
   return (
-    <div className="min-h-full w-full flex items-stretch justify-center bg-black">
-      <div className="w-full max-w-[480px] min-h-screen bg-base relative shadow-[0_0_60px_rgba(0,0,0,0.8)]">
+    <div className="min-h-full w-full flex items-stretch justify-center bg-app">
+      <div className="w-full max-w-[480px] min-h-screen bg-base relative shadow-frame">
         {!hydrated ? (
           <div className="flex h-screen items-center justify-center text-ink-mute text-sm">
             加载中…

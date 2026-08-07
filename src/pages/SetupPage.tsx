@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
+import { useThemeStore } from "@/store/themeStore";
 import {
   COLOR_ORDER,
   INITIAL_MONEY,
@@ -8,7 +9,7 @@ import {
   type PlayerColor,
 } from "@/lib/game";
 import { cn } from "@/lib/utils";
-import { Shuffle, Play, Users, Coins } from "lucide-react";
+import { Shuffle, Play, Users, Coins, Sun, Moon } from "lucide-react";
 
 const COUNT_OPTIONS = [2, 3, 4];
 
@@ -21,6 +22,8 @@ export default function SetupPage() {
   const setAllInitialMoney = useGameStore((s) => s.setAllInitialMoney);
   const setAllUnlimited = useGameStore((s) => s.setAllUnlimited);
   const startGame = useGameStore((s) => s.startGame);
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggle);
 
   const count = players.length;
   // 初始资金预设：所有玩家金钱一致时高亮对应档位
@@ -53,9 +56,21 @@ export default function SetupPage() {
     <div className="flex h-full flex-col bg-base text-ink">
       {/* 顶栏 */}
       <header className="px-5 pt-6 pb-4 border-b border-line">
-        <div className="flex items-center gap-2 text-brass-dim text-[11px] font-display tracking-[0.3em] uppercase">
-          <span className="inline-block w-6 h-px bg-brass-dim" />
-          Brass · Birmingham
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-brass-dim text-[11px] font-display tracking-[0.3em] uppercase">
+            <span className="inline-block w-6 h-px bg-brass-dim" />
+            Brass · Birmingham
+          </div>
+          {/* 深浅主题切换 */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-ink-dim border border-line bg-surface active:bg-elevated transition-colors"
+            aria-label={theme === "dark" ? "切换到浅色" : "切换到深色"}
+            title={theme === "dark" ? "切换到浅色" : "切换到深色"}
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
         </div>
         <h1 className="mt-1 font-display text-3xl font-bold tracking-wide">
           伯明翰小助手

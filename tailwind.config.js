@@ -9,19 +9,21 @@ export default {
     },
     extend: {
       colors: {
-        base: "#0f0f0f",
-        surface: "#1a1a1a",
-        elevated: "#242424",
-        line: "#2e2e2e",
+        // 主题色由 CSS 变量驱动，在 index.css 中按 .dark 切换深浅
+        base: "var(--color-base)",
+        surface: "var(--color-surface)",
+        elevated: "var(--color-elevated)",
+        line: "var(--color-line)",
+        app: "var(--color-app)",
         ink: {
-          DEFAULT: "#f5f0e6",
-          dim: "#a8a39a",
-          mute: "#6b6760",
+          DEFAULT: "var(--color-ink)",
+          dim: "var(--color-ink-dim)",
+          mute: "var(--color-ink-mute)",
         },
         brass: {
-          DEFAULT: "#c8a464",
-          dim: "#8a7448",
-          deep: "#5c4a2e",
+          DEFAULT: "var(--color-brass)",
+          dim: "var(--color-brass-dim)",
+          deep: "var(--color-brass-deep)",
         },
         player: {
           red: "#c83232",
@@ -38,8 +40,9 @@ export default {
         sans: ['"Manrope"', "-apple-system", "BlinkMacSystemFont", "sans-serif"],
       },
       boxShadow: {
-        "inset-line": "inset 0 -1px 0 0 rgba(255,255,255,0.04)",
-        card: "0 1px 0 0 rgba(255,255,255,0.03), 0 8px 24px -12px rgba(0,0,0,0.6)",
+        "inset-line": "inset 0 -1px 0 0 var(--shadow-inset-top)",
+        card: "0 1px 0 0 var(--shadow-inset-top), 0 8px 24px -12px var(--shadow-card)",
+        frame: "0 0 60px var(--shadow-card)",
       },
     },
   },
