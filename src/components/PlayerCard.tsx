@@ -207,7 +207,7 @@ export default function PlayerCard({
 
           {/* 收入轨行：仅进度条 + 步进（收入值已移至头部） */}
           <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs text-ink-dim font-display tracking-wider w-11 shrink-0 tnum">
+            <span className="text-base text-ink-dim font-display tracking-wider w-12 shrink-0 tnum">
               轨{player.incomeTrack}
             </span>
             {/* 轨道可视化：0-99 位置，黄色填充 */}
