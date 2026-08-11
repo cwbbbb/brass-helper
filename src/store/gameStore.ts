@@ -53,7 +53,7 @@ function createPlayers(count: number): Player[] {
     color,
     money: INITIAL_MONEY[count] ?? 0,
     spentThisRound: 0,
-    incomeTrack: 0,
+    incomeTrack: 10,
     unlimitedMoney: false,
   }));
 }
@@ -173,7 +173,7 @@ export const useGameStore = create<Store>((set, get) => ({
         players: state.players.map((p) => ({
           ...p,
           spentThisRound: 0,
-          incomeTrack: 0,
+          incomeTrack: 10,
         })),
         round: 1,
         phase: "playing",
