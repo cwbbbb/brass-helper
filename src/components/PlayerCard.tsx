@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { type Player, PLAYER_COLORS, positionBadge } from "@/lib/game";
+import { type Player, PLAYER_COLORS, positionBadge, trackToIncome } from "@/lib/game";
 import { useGameStore } from "@/store/gameStore";
 import { useLongPressRepeat } from "@/hooks/useLongPressRepeat";
 import { cn } from "@/lib/utils";
@@ -31,9 +31,9 @@ export default function PlayerCard({
   // 贷款按钮：单击=贷款，长按=撤回贷款
   const loanLongPress = useLongPressRepeat(() => repayLoan(player.id));
 
-  // 轨道可视化：负数显示为反向（向左）的红色段，正数显示为紫色填充
-  const incomePct = Math.max(0, Math.min(100, player.incomeLevel));
-  const incomeNegPct = Math.max(0, Math.min(100, -player.incomeLevel));
+  // 收入值由轨位推导（非 1:1）；轨道条按 0-99 位置填充
+  const income = trackToIncome(player.incomeTrack);
+  const trackPct = (player.incomeTrack / 99) * 100;
 
   return (
     <article
@@ -99,7 +99,7 @@ export default function PlayerCard({
                   style={{ touchAction: "none" }}
                   className="h-8 w-8 rounded-md bg-player-red/15 text-player-red-light border border-player-red/30 font-display font-bold text-sm active:bg-player-red/25 active:scale-95 transition-all"
                   aria-label="贷款，单击贷款，长按撤回"
-                  title="单击贷款 +$30，长按撤回 −$30"
+                  title="单击贷款 +$30（收入−3），长按撤回 −$30"
                 >
                   贷
                 </button>
@@ -183,33 +183,31 @@ export default function PlayerCard({
             </div>
           </div>
 
-          {/* 收入轨行 */}
+          {/* 收入轨行：收入值由轨位推导（非 1:1），步进移动轨位 */}
           <div className="mt-2 flex items-center gap-2">
             <div className="flex flex-col leading-none w-12">
               <span className="text-[10px] text-ink-mute font-display tracking-wider">
-                收入轨
+                收入
               </span>
               <span
                 className={cn(
                   "font-display text-lg font-semibold tnum",
-                  player.incomeLevel < 0
+                  income < 0
                     ? "text-player-red-light"
                     : "text-player-purple-light",
                 )}
               >
-                L{player.incomeLevel}
+                {income}
+              </span>
+              <span className="text-[9px] text-ink-mute tnum mt-0.5">
+                轨{player.incomeTrack}
               </span>
             </div>
-            {/* 轨道可视化：中点为 0，正向往右紫色填充，负向往左红色填充 */}
+            {/* 轨道可视化：0-99 位置，紫色填充 */}
             <div className="flex-1 h-2 bg-base rounded-full overflow-hidden border border-line relative">
-              <div className="absolute inset-y-0 left-1/2 w-px bg-line" />
               <div
-                className="absolute inset-y-0 bg-gradient-to-r from-player-purple to-player-purple-light transition-all duration-200"
-                style={{ left: "50%", width: `${incomePct / 2}%` }}
-              />
-              <div
-                className="absolute inset-y-0 bg-gradient-to-l from-player-red to-player-red-light transition-all duration-200"
-                style={{ right: "50%", width: `${incomeNegPct / 2}%` }}
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-player-purple to-player-purple-light transition-all duration-200"
+                style={{ width: `${trackPct}%` }}
               />
             </div>
             <div className="flex gap-1.5 items-center">
@@ -217,7 +215,8 @@ export default function PlayerCard({
                 variant="sub"
                 onClick={() => adjustIncome(player.id, -1)}
                 repeat
-                ariaLabel="减少收入等级（可长按）"
+                disabled={player.incomeTrack <= 0}
+                ariaLabel="收入轨后退一格（可长按）"
                 className="h-9 w-9 text-base"
               >
                 −
@@ -226,8 +225,8 @@ export default function PlayerCard({
                 variant="income"
                 onClick={() => adjustIncome(player.id, 1)}
                 repeat
-                disabled={player.incomeLevel >= 100}
-                ariaLabel="增加收入等级（可长按）"
+                disabled={player.incomeTrack >= 99}
+                ariaLabel="收入轨前进一格（可长按）"
                 className="h-9 w-9 text-base"
               >
                 +

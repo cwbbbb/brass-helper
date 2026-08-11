@@ -7,7 +7,8 @@ export interface Player {
   color: PlayerColor;
   money: number;
   spentThisRound: number;
-  incomeLevel: number;
+  // 收入轨位置（0-99），收入值由 trackToIncome 推导（非 1:1）
+  incomeTrack: number;
   // 无限金钱模式：仅按回合内花费排顺位，金钱不限制也不扣减
   unlimitedMoney: boolean;
 }
@@ -26,9 +27,36 @@ export const INITIAL_MONEY: Record<number, number> = {
   4: 17,
 };
 
-// 收入轨等级：允许负数（现实中可表示贷款/负债态），设一个宽松上限防误触
-export const INCOME_LEVEL_MIN = -Infinity;
-export const INCOME_LEVEL_MAX = 100;
+// 收入轨位置范围：0-99（99 为最高，不可再涨）
+export const INCOME_TRACK_MIN = 0;
+export const INCOME_TRACK_MAX = 99;
+
+// 收入轨位置 → 收入值（非 1:1，参考 Brass: Birmingham 收入轨）：
+//   [0-10]  ：每格 1（负收入区，-10 → 0）
+//   (10-30] ：每两格 +1（0 → 10）
+//   (30-60] ：每三格 +1（10 → 20）
+//   (60-96] ：每四格 +1（20 → 29）
+//   (96-99] ：每三格 +1（29 → 30）
+// 每段用 ceil，使「该收入的最高一格」= 段首 + (收入 - 段首收入) × 每格数。
+export function trackToIncome(track: number): number {
+  const t = Math.max(INCOME_TRACK_MIN, Math.min(INCOME_TRACK_MAX, Math.floor(track)));
+  if (t <= 10) return t - 10;                       // -10 .. 0
+  if (t <= 30) return Math.ceil((t - 10) / 2);       // 0 .. 10
+  if (t <= 60) return 10 + Math.ceil((t - 30) / 3);  // 10 .. 20
+  if (t <= 96) return 20 + Math.ceil((t - 60) / 4);  // 20 .. 29
+  return 29 + Math.ceil((t - 96) / 3);               // 29 .. 30
+}
+
+// 给定收入值，返回该收入对应的「最高一格」收入轨位置。
+// 贷款降收入后即落在此处（如收入 20→17，落到轨位 51）。
+export function maxTrackForIncome(income: number): number {
+  if (income <= -10) return 0;                        // 收入 ≤ -10 → 轨位 0
+  if (income <= 0) return income + 10;                // -10..0 → 轨位 0..10
+  if (income <= 10) return 10 + income * 2;           // 0..10 → 轨位 10..30
+  if (income <= 20) return 30 + (income - 10) * 3;    // 10..20 → 轨位 30..60
+  if (income <= 29) return 60 + (income - 20) * 4;    // 20..29 → 轨位 60..96
+  return INCOME_TRACK_MAX;                            // 30 → 轨位 99
+}
 
 // 玩家颜色配置
 export const PLAYER_COLORS: Record<

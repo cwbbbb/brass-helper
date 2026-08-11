@@ -5,7 +5,10 @@ import {
   type PlayerColor,
   COLOR_ORDER,
   INITIAL_MONEY,
-  INCOME_LEVEL_MAX,
+  INCOME_TRACK_MAX,
+  INCOME_TRACK_MIN,
+  trackToIncome,
+  maxTrackForIncome,
   deepClone,
 } from "@/lib/game";
 
@@ -32,7 +35,7 @@ interface GameActions {
   backToSetup: () => void;
 }
 
-// 贷款规则：收入轨 −3，立即获得 $30
+// 贷款规则：收入 −3（落到该收入的最高轨位），立即获得 $30
 export const LOAN_INCOME_PENALTY = 3;
 export const LOAN_MONEY_GAIN = 30;
 
@@ -50,7 +53,7 @@ function createPlayers(count: number): Player[] {
     color,
     money: INITIAL_MONEY[count] ?? 0,
     spentThisRound: 0,
-    incomeLevel: 0,
+    incomeTrack: 0,
     unlimitedMoney: false,
   }));
 }
@@ -89,6 +92,16 @@ function loadPersisted(): GameState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GameState;
     if (!parsed.players || !Array.isArray(parsed.players)) return null;
+    // 迁移旧版 incomeLevel（1:1）→ incomeTrack（0-99 轨位）
+    parsed.players = (parsed.players as unknown as Record<string, unknown>[]).map(
+      (p) => {
+        if (typeof p.incomeTrack === "number") return p as unknown as Player;
+        const oldLevel = typeof p.incomeLevel === "number" ? p.incomeLevel : 0;
+        const rest = { ...p };
+        delete rest.incomeLevel;
+        return { ...rest, incomeTrack: maxTrackForIncome(oldLevel) } as unknown as Player;
+      },
+    );
     return parsed;
   } catch {
     return null;
@@ -160,7 +173,7 @@ export const useGameStore = create<Store>((set, get) => ({
         players: state.players.map((p) => ({
           ...p,
           spentThisRound: 0,
-          incomeLevel: 0,
+          incomeTrack: 0,
         })),
         round: 1,
         phase: "playing",
@@ -200,9 +213,12 @@ export const useGameStore = create<Store>((set, get) => ({
     set((state) => ({
       players: state.players.map((p) => {
         if (p.id !== playerId) return p;
-        // 收入轨允许负数；仅设一个宽松上限避免误触飞涨
-        const nextLevel = Math.min(INCOME_LEVEL_MAX, p.incomeLevel + delta);
-        return { ...p, incomeLevel: nextLevel };
+        // 沿收入轨移动一格（0-99），收入值由 trackToIncome 推导
+        const nextTrack = Math.max(
+          INCOME_TRACK_MIN,
+          Math.min(INCOME_TRACK_MAX, p.incomeTrack + delta),
+        );
+        return { ...p, incomeTrack: nextTrack };
       }),
     })),
 
@@ -223,10 +239,11 @@ export const useGameStore = create<Store>((set, get) => ({
         if (p.id !== playerId) return p;
         // 无限金钱模式：不需要贷款
         if (p.unlimitedMoney) return p;
-        // 贷款：收入轨 −3，立即 +$30（收入轨可降到负数）
+        // 贷款：收入 −3，落到该收入的「最高一格」轨位，立即 +$30
+        const income = trackToIncome(p.incomeTrack);
         return {
           ...p,
-          incomeLevel: p.incomeLevel - LOAN_INCOME_PENALTY,
+          incomeTrack: maxTrackForIncome(income - LOAN_INCOME_PENALTY),
           money: p.money + LOAN_MONEY_GAIN,
         };
       }),
@@ -238,11 +255,15 @@ export const useGameStore = create<Store>((set, get) => ({
         if (p.id !== playerId) return p;
         // 无限金钱模式：不需要撤回贷款
         if (p.unlimitedMoney) return p;
-        // 撤回贷款：金钱 −$30（不能为负），收入轨 +3（不超过上限）
+        // 撤回贷款：金钱 −$30（不能为负），收入 +3 落到该收入最高轨位
         if (p.money < LOAN_MONEY_GAIN) return p;
+        const income = trackToIncome(p.incomeTrack);
         return {
           ...p,
-          incomeLevel: Math.min(INCOME_LEVEL_MAX, p.incomeLevel + LOAN_INCOME_PENALTY),
+          incomeTrack: Math.min(
+            INCOME_TRACK_MAX,
+            maxTrackForIncome(income + LOAN_INCOME_PENALTY),
+          ),
           money: p.money - LOAN_MONEY_GAIN,
         };
       }),
@@ -271,7 +292,7 @@ export const useGameStore = create<Store>((set, get) => ({
       // 3. 发放收入到金钱，清零本回合花费（无限金钱模式不发放收入）
       const newPlayers = sortedPlayers.map((p) => ({
         ...p,
-        money: p.unlimitedMoney ? p.money : p.money + p.incomeLevel,
+        money: p.unlimitedMoney ? p.money : p.money + trackToIncome(p.incomeTrack),
         spentThisRound: 0,
       }));
 
