@@ -70,19 +70,39 @@ export default function PlayerCard({
 
         {/* 右侧主体 */}
         <div className="flex-1 px-3 py-2 min-w-0">
-          {/* 头部：玩家色 + 贷款按钮 */}
+          {/* 头部：玩家色 + 收入 + 贷款 + 金钱 同一行 */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-display text-base font-semibold">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-display text-base font-semibold truncate">
                 {cfg.label}
               </span>
               {isNext && (
-                <span className="text-[10px] text-brass font-display tracking-wider bg-brass/10 border border-brass/30 rounded px-1.5 py-0.5">
+                <span className="text-[10px] text-brass font-display tracking-wider bg-brass/10 border border-brass/30 rounded px-1.5 py-0.5 shrink-0">
                   NEXT
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              {/* 收入值（由轨位推导，非 1:1） */}
+              <div
+                className="flex items-baseline gap-0.5 px-1"
+                title={`收入 ${income}（轨位 ${player.incomeTrack}）`}
+              >
+                <span className="text-[10px] text-ink-mute font-display tracking-wider mr-0.5">
+                  收入
+                </span>
+                <span
+                  className={cn(
+                    "font-display text-2xl font-bold tnum leading-none",
+                    income < 0
+                      ? "text-player-red-light"
+                      : "text-player-purple-light",
+                  )}
+                >
+                  {income > 0 ? "+" : ""}
+                  {income}
+                </span>
+              </div>
               {/* 贷款按钮：单击贷款（收入−3 金钱+30），长按撤回（收入+3 金钱−30）；无限金钱模式隐藏 */}
               {!player.unlimitedMoney && (
                 <button
@@ -188,26 +208,11 @@ export default function PlayerCard({
             </div>
           </div>
 
-          {/* 收入轨行：收入值由轨位推导（非 1:1），步进移动轨位 */}
+          {/* 收入轨行：仅进度条 + 步进（收入值已移至头部） */}
           <div className="mt-2 flex items-center gap-2">
-            <div className="flex flex-col leading-none w-12">
-              <span className="text-[10px] text-ink-mute font-display tracking-wider">
-                收入
-              </span>
-              <span
-                className={cn(
-                  "font-display text-lg font-semibold tnum",
-                  income < 0
-                    ? "text-player-red-light"
-                    : "text-player-purple-light",
-                )}
-              >
-                {income}
-              </span>
-              <span className="text-[9px] text-ink-mute tnum mt-0.5">
-                轨{player.incomeTrack}
-              </span>
-            </div>
+            <span className="text-[10px] text-ink-mute font-display tracking-wider w-10 shrink-0">
+              轨{player.incomeTrack}
+            </span>
             {/* 轨道可视化：0-99 位置，紫色填充 */}
             <div className="flex-1 h-2 bg-base rounded-full overflow-hidden border border-line relative">
               <div
