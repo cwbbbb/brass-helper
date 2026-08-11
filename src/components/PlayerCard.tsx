@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { type Player, PLAYER_COLORS, positionBadge, trackToIncome } from "@/lib/game";
+import { useThemeStore } from "@/store/themeStore";
 import { useGameStore } from "@/store/gameStore";
 import { useLongPressRepeat } from "@/hooks/useLongPressRepeat";
+import { useLongPressOnce } from "@/hooks/useLongPressOnce";
 import { cn } from "@/lib/utils";
 import StepperButton from "./StepperButton";
 
@@ -28,8 +30,11 @@ export default function PlayerCard({
 
   const [showMoneyDialog, setShowMoneyDialog] = useState(false);
 
-  // 贷款按钮：单击=贷款，长按=撤回贷款
-  const loanLongPress = useLongPressRepeat(() => repayLoan(player.id));
+  // 贷款按钮：单击=贷款，长按=撤回贷款（仅触发一次，不连续）
+  const loanLongPress = useLongPressOnce(() => repayLoan(player.id));
+
+  // 浅色主题下花费数字不发光（浅底发光会模糊）
+  const theme = useThemeStore((s) => s.theme);
 
   // 收入值由轨位推导（非 1:1）；轨道条按 0-99 位置填充
   const income = trackToIncome(player.incomeTrack);
@@ -83,8 +88,8 @@ export default function PlayerCard({
                 <button
                   type="button"
                   onClick={() => {
-                    if (loanLongPress.didRepeatRef.current) {
-                      loanLongPress.didRepeatRef.current = false;
+                    if (loanLongPress.didFireRef.current) {
+                      loanLongPress.didFireRef.current = false;
                       return;
                     }
                     takeLoan(player.id);
@@ -111,12 +116,12 @@ export default function PlayerCard({
                   if (!player.unlimitedMoney) setShowMoneyDialog(true);
                 }}
                 disabled={player.unlimitedMoney}
-                className="flex items-center gap-0.5 rounded-md px-1.5 py-1 active:bg-elevated transition-colors disabled:active:bg-transparent"
+                className="flex items-baseline gap-0.5 rounded-md px-1.5 py-1 active:bg-elevated transition-colors disabled:active:bg-transparent"
                 aria-label={player.unlimitedMoney ? "无限金钱模式" : "点击调整金钱"}
                 title={player.unlimitedMoney ? "无限金钱模式" : "点击调整金钱（售卖铁煤等直接获得金钱）"}
               >
-                <span className="text-brass-dim font-display text-xs">$</span>
-                <span className="font-display text-base font-bold text-ink-dim tnum leading-none">
+                <span className="text-brass-dim font-display text-sm">$</span>
+                <span className="font-display text-2xl font-bold text-ink tnum leading-none">
                   {player.unlimitedMoney ? "∞" : player.money}
                 </span>
               </button>
@@ -135,7 +140,7 @@ export default function PlayerCard({
                   fontSize: "2.75rem",
                   color: player.spentThisRound > 0 ? "#ff3b30" : "#5a5650",
                   textShadow:
-                    player.spentThisRound > 0
+                    player.spentThisRound > 0 && theme === "dark"
                       ? "0 0 14px rgba(255,59,48,0.65)"
                       : "none",
                 }}
