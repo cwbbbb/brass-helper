@@ -42,10 +42,7 @@ export default function PlayerCard({
 
   return (
     <article
-      className={cn(
-        "relative bg-surface border rounded-xl overflow-hidden shadow-card transition-colors animate-slide-up",
-        isNext ? "border-brass/50" : "border-line",
-      )}
+      className="relative bg-surface border border-line rounded-xl overflow-hidden shadow-card transition-colors animate-slide-up"
       style={{ animationDelay: `${index * 50}ms` }}
     >
       {/* 顶部色条 */}
@@ -96,7 +93,7 @@ export default function PlayerCard({
                     "font-display text-2xl font-bold tnum leading-none",
                     income < 0
                       ? "text-player-red-light"
-                      : "text-player-purple-light",
+                      : "text-player-yellow-light",
                   )}
                 >
                   {income > 0 ? "+" : ""}
@@ -210,13 +207,13 @@ export default function PlayerCard({
 
           {/* 收入轨行：仅进度条 + 步进（收入值已移至头部） */}
           <div className="mt-2 flex items-center gap-2">
-            <span className="text-[10px] text-ink-mute font-display tracking-wider w-10 shrink-0">
+            <span className="text-xs text-ink-dim font-display tracking-wider w-11 shrink-0 tnum">
               轨{player.incomeTrack}
             </span>
-            {/* 轨道可视化：0-99 位置，紫色填充 */}
+            {/* 轨道可视化：0-99 位置，黄色填充 */}
             <div className="flex-1 h-2 bg-base rounded-full overflow-hidden border border-line relative">
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-player-purple to-player-purple-light transition-all duration-200"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-player-yellow to-player-yellow-light transition-all duration-200"
                 style={{ width: `${trackPct}%` }}
               />
             </div>
